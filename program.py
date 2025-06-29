@@ -9,18 +9,27 @@ class Block:
         self.code.ins("JUMP nib")
     
     def __call__(self):
-        self.code.ins(f"SET INT callblock = {self.code.t + 1}")
+        self.code.ram['callblock' + str(self.code.ram['stackNum'])] = self
+        self.code.ram['stackNum'] += 1
+        self.callback = self.code.t + 1
         self.code.ins(f"SET INT nib = {self.start}")
+        self.code.ins("JUMP nib")
+    
+    def end(self):
+        print('log:', self.callback)
+        self.code.ram['stackNum'] -= 1
+        self.code.ins(f"SET INT nib = {self.callback}")
         self.code.ins("JUMP nib")
 
 class Program:
     def __init__(self):
-        self.ram = {'end': '\n'}
+        self.ram = {'end': '\n', 'stackNum': 0}
         self.code = ""
         self.t = 0
         self.i = False
         self.sinc = False
         self.timesleep = 0
+        self.view = False
     
     def intpTypes(self, instruct: str):
         if len(instruct) == 0:
@@ -53,6 +62,9 @@ class Program:
         if self.timesleep > time.time():
             self.t -= 1
             return
+        
+        if self.view:
+            print('[LOGCODE]:', string)
 
         if len(string) == 0:
             return
@@ -402,7 +414,7 @@ class Program:
             elif c[0] == "END":
                 if len(c) == 1:
                     try:
-                        self.ins(f"JUMP callblock")
+                        self.ram['callblock' + str(self.ram['stackNum'] - 1)].end()
                     except:
                         print("[WARN]: Block not declared")
     
@@ -412,6 +424,8 @@ class Program:
         while not self.i:
             self.go()
         self.sinc = False
+        if self.view:
+            print('ram:', self.ram)
     
     def go(self):
         a = self.code.split("\n")
@@ -432,6 +446,7 @@ program = Program()
 with open('mycode.alp', 'r', encoding='utf-8') as f:
     program.code = f.read()
 
+program.view = True
 program.run()
 
 while True: pass

@@ -16,7 +16,6 @@ class Block:
         self.code.ins("JUMP nib")
     
     def end(self):
-        print('log:', self.callback)
         self.code.ram['stackNum'] -= 1
         self.code.ins(f"SET INT nib = {self.callback}")
         self.code.ins("JUMP nib")
